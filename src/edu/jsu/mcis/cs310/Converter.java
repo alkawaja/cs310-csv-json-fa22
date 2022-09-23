@@ -7,7 +7,7 @@ import org.json.simple.*;
 import org.json.simple.parser.*;
 
 public class Converter {
-    
+
     /*
         
         Consider the following CSV data:
@@ -55,53 +55,84 @@ public class Converter {
         libraries we have discussed, OpenCSV and JSON.simple.  See the "Data
         Exchange" lecture notes for more details, including examples.
         
-    */
-    
+     */
     @SuppressWarnings("unchecked")
     public static String csvToJson(String csvString) {
-        
         String results = "";
-        
         try {
-            
             // Initialize CSV Reader and Iterator
-            
             CSVReader reader = new CSVReader(new StringReader(csvString));
             List<String[]> full = reader.readAll();
             Iterator<String[]> iterator = full.iterator();
-            
+
             /* INSERT YOUR CODE HERE */
-            
+            JSONObject jsonObject = new JSONObject();
+            String[] headerData = iterator.next();
+            JSONArray colHeader = new JSONArray();
+            JSONArray rowHeader = new JSONArray();
+            JSONArray data = new JSONArray();
+            for (String headerData1 : headerData) {
+                colHeader.add(headerData1);
+            }
+            while (iterator.hasNext()) {
+                String[] rows = iterator.next();
+                JSONArray list = new JSONArray();
+                rowHeader.add(rows[0]);
+                for (int i = 0; i < (rows.length) - 1; i++) {
+                    list.add(Integer.parseInt(rows[i + 1]));
+                }
+                data.add(list);
+            }
+
+            jsonObject.put("colHeaders", colHeader);
+            jsonObject.put("rowHeaders", rowHeader);
+            jsonObject.put("data", data);
+
+            results = JSONValue.toJSONString(jsonObject);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch(Exception e) { e.printStackTrace(); }
-        
         // Return JSON String
-        
         return results.trim();
-        
     }
-    
+
     public static String jsonToCsv(String jsonString) {
-        
+
         String results = "";
-        
+
         try {
-            
-            // Initialize JSON Parser and CSV Writer
-            
             JSONParser parser = new JSONParser();
+
             StringWriter writer = new StringWriter();
             CSVWriter csvWriter = new CSVWriter(writer, ',', '"', '\\', "\n");
-            
             /* INSERT YOUR CODE HERE */
-            
+
+            JSONObject jsonObject = (JSONObject) parser.parse(jsonString);
+            JSONArray colHeaders = (JSONArray) jsonObject.get("colHeaders");
+            JSONArray rowHeaders = (JSONArray) jsonObject.get("rowHeaders");
+            JSONArray allData = (JSONArray) jsonObject.get("data");
+
+            String[] header = new String[colHeaders.size()];
+            for (int i = 0; i < colHeaders.size(); i++) {
+                header[i] = (String) colHeaders.get(i);
+            }
+            csvWriter.writeNext(header);
+
+            for (int i = 0; i < allData.size(); ++i) {
+                JSONArray array = (JSONArray) allData.get(i);
+                String[] rows = new String[array.size() + 1];
+                rows[0] = (String) rowHeaders.get(i);
+                for (int j = 0; j < array.size(); j++) {
+                    rows[j + 1] = Long.toString((long) array.get(j));
+                }
+                csvWriter.writeNext(rows);
+            }
+            results = writer.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch(Exception e) { e.printStackTrace(); }
-        
+
         // Return CSV String
-        
         return results.trim();
-        
     }
-	
 }
